@@ -1,4 +1,4 @@
-const { ethers } = require('ethers')
+// const { ethers } = require('ethers')
 const express = require('express')
 const worker = require('./worker')
 const { withdraw } = require('./wallet')
@@ -7,12 +7,12 @@ const app = express()
 
 app.post('/withdraw', async (req, res) => {
     try {
-        // 
-        await withdraw(proof)
+        await withdraw(worker, req.body.note, req.body.recipient, req.body.coin)
         res.json({
             success: true,
         })
     } catch(ex) {
+        // throw ex
         res.json({
             success: false,
             message: ex.message

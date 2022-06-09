@@ -23,10 +23,11 @@ describe("Test total", () => {
     it("Withdraw", async () => {
         const [owner, addr1, addr2, ...addrs] = await ethers.getSigners()
         const CashX = await getAt("CashX", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0")
-        const { data } = await axios.post('http://localhost:3000/proof', {
-            "note": "cashx-0.1eth-6170376338cb99f6eb2e3b03e547130b39e1fc3c923fd37ca67bb6b03ae142effd1e112d108e72787895eb4bb51cb69292d6b490e20f5d59e3efee9f4ec1",
-            "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-            "currency": "avaxc"
+        console.log(await CashX.roots(0))
+        console.log(await CashX.roots(1))
+        const { data } = await axios.post('http://localhost:8000/proof', {
+            "note": "cashx-0.1bnbbsc-31337-8bd546ea672bdf70ff3bce29125343afe7a687b59d2138a2fd11d9512a2d51a0a151a61944bd9622a2d95bbd43cad6b318bceff3f7c31324fbb506f8ffed",
+            "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
         })
         await (await CashX.connect(addr1).withdraw(data.proof, ...data.args)).wait()
     })

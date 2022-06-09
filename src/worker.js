@@ -7,7 +7,7 @@ const circomlib = require('circomlib')
 const websnarkUtils = require('websnark/src/utils')
 const buildGroth16 = require('websnark/src/groth16')
 const fs = require('fs')
-const { getBlockNumber, getLogs } = require('./wallet')
+const { getBlockNumber, getLogs, getTree } = require('./wallet')
 const chains = require('../chains.json')
 
 const pedersenHash = data => circomlib.babyJub.unpackPoint(circomlib.pedersenHash.hash(data))[0]
@@ -26,9 +26,10 @@ const start = async () => {
     for(let chainId in chains) {
         for(let symbol in chains[chainId].tokens) {
             for(let amount in chains[chainId].tokens[symbol].instanceAddress) {
-                if(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`)) {
+                // await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, 0)
+                if(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`) > 0)
                     trees[`tree:${chainId}:${amount}${symbol}`] = MerkleTree.deserialize(JSON.parse(await redis.get(`cashx:${chainId}:${amount}${symbol}:tree`)))
-                } else
+                else
                     trees[`tree:${chainId}:${amount}${symbol}`] = new MerkleTree(20)
                 setTimeout(()=>fetchEvents(chainId, symbol, amount), 200)
             }
@@ -52,9 +53,10 @@ const fetchEvents = async (chainId, symbol, amount) => {
         const logs = await getLogs(chainId, symbol, amount, fromBlock, toBlock)
         if(logs.length) {
             const tree = trees[`tree:${chainId}:${amount}${symbol}`]
+            console.log("root", tree.root())
             for(const log of logs) {
                 tree.insert(log.topics[1])
-                console.log("added", log.topics[1])
+                console.log("added", tree.root(), log.topics[1])
             }
             redis.set(`cashx:${chainId}:${amount}${symbol}:tree`, JSON.stringify(tree.serialize()))
         }
@@ -92,10 +94,12 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
     if (!match) {
         throw new Error('The note has invalid format')
     }
+    const { chainId, symbol, amount } = match.groups
     const buf = Buffer.from(match.groups.note, 'hex')
     const nullifier = snarkjs.bigInt.leBuff2int(buf.slice(0, 31))
     const secret = snarkjs.bigInt.leBuff2int(buf.slice(31, 62))
     const deposit = createDeposit(nullifier, secret)
+    const tree = trees[`tree:${chainId}:${amount}${symbol}`]
     const index = tree.indexOf(deposit.commitmentHex, (el1, el2) => {
         return snarkjs.bigInt(el1)==snarkjs.bigInt(el2)
     })
