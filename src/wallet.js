@@ -1,6 +1,5 @@
 const { ethers } = require("ethers")
 const chains = require('../chains.json')
-const worker = require('./worker')
 const abiCashX = require('../abi/CashX.json')
 const { default: axios } = require("axios")
 const res = require("express/lib/response")
@@ -15,7 +14,7 @@ const init = () => {
     }
 }
 
-const withdraw = async (note, to, coin) => {
+const withdraw = async (worker, note, to, coin) => {
     const rx = /cashx-(?<amount>[\d.]+)(?<symbol>\w+)-(?<chainId>\d+)-(?<note>[0-9a-fA-F]{124})/g
     const match = rx.exec(note)
     if (!match) {
@@ -26,7 +25,7 @@ const withdraw = async (note, to, coin) => {
     const wallet = new ethers.Wallet(process.env.RELAYER_WALLET, provider)
     const address = chain.tokens[match.groups.symbol].instanceAddress[String(match.groups.amount)]
     const contract = new ethers.Contract(address, abiCashX, wallet)
-    const isSwap = coin!=undefined && coin!=symbol
+    const isSwap = coin!=undefined && coin!=match.groups.symbol
     if(isSwap) {
         const quota = await axios.get(process.env.SWAPZONE_GETRATE_URL, {
             params: {
@@ -67,9 +66,10 @@ const withdraw = async (note, to, coin) => {
     } else {
         const proof = await worker.prove(note, to, wallet.address)
         const transaction = await (await contract.withdraw(proof.proof, ...proof.args)).wait()
+        console.log(transaction)
         res.json({
             success: true,
-            transaction
+            // transaction
         })
     }
 }

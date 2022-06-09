@@ -23,16 +23,9 @@ function createDeposit() {
 
 describe("Test total", () => {
     it("Deploy", async () => {
-        console.time('create')
-        const wallet = ethers.Wallet.createRandom()
-        console.log(wallet.privateKey)
-        console.timeEnd('create')
-
-        // const CashX = await getAt("CashX", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0")
-        // for(var i = 0;i<100;i++) {
-        //     const deposit = createDeposit()
-        //     console.log(deposit.note)
-        //     await CashX.deposit(deposit.commitmentHex, {value:ethers.utils.parseEther("0.1")})
-        // }
+        const CashX = await getAt("CashX", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0")
+        const deposit = createDeposit()
+        console.log(deposit.note)
+        await CashX.deposit(deposit.commitmentHex, {value:ethers.utils.parseEther("0.1")})
     })
 })

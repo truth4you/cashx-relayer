@@ -13,7 +13,7 @@ app.use(cors({
 app.use(bodyParser.json())
 app.use(router)
 
-app.listen(3000, () => {
+app.listen(8000, () => {
     console.log("Relayer is started!")
 })
 wallet.init()
