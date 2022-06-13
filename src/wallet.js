@@ -1,4 +1,4 @@
-const { ethers } = require("ethers")
+const { ethers, BigNumber } = require("ethers")
 const chains = require('../chains.json')
 const abiCashX = require('../abi/CashX.json')
 const { default: axios } = require("axios")
@@ -24,6 +24,7 @@ const withdraw = async (worker, note, to, coin) => {
     const provider = providers[match.groups.chainId]
     const wallet = new ethers.Wallet(process.env.RELAYER_WALLET, provider)
     const address = chain.tokens[match.groups.symbol].instanceAddress[String(match.groups.amount)]
+    
     const contract = new ethers.Contract(address, abiCashX, wallet)
     const isSwap = coin!=undefined && coin!=match.groups.symbol
     if(isSwap) {
@@ -65,13 +66,28 @@ const withdraw = async (worker, note, to, coin) => {
         })
     } else {
         const proof = await worker.prove(note, to, wallet.address)
-        const transaction = await (await contract.withdraw(proof.proof, ...proof.args)).wait()
-        console.log(transaction)
-        res.json({
-            success: true,
-            // transaction
-        })
+        const fee = estimateGas(note,proof).add(ethers.utils.parseEther("0.001"))
+        console.log(fee)
+        proof.args[4] = fee
+        await (await contract.withdraw(proof.proof, ...proof.args)).wait()
     }
+}
+
+const estimateGas = async(note,proof) => {
+    const rx = /cashx-(?<amount>[\d.]+)(?<symbol>\w+)-(?<chainId>\d+)-(?<note>[0-9a-fA-F]{124})/g
+    const match = rx.exec(note)
+    if (!match) {
+        throw new Error('The note has invalid format')
+    }
+    const chain = chains[match.groups.chainId]
+    const provider = providers[match.groups.chainId]
+    const wallet = new ethers.Wallet(process.env.RELAYER_WALLET, provider)
+    const address = chain.tokens[match.groups.symbol].instanceAddress[String(match.groups.amount)]
+    const contract = new ethers.Contract(address, abiCashX, wallet)
+
+    const estimate = await contract.estimateGas.withdraw(proof.proof, ...proof.args)
+    const gasPrice = await provider.getFeeData()
+    return estimate.mul(gasPrice.maxFeePerGas)
 }
 
 const getBlockNumber = async (chainId) => {
@@ -92,5 +108,5 @@ const getLogs = async (chainId, symbol, amount, fromBlock, toBlock) => {
 }
 
 module.exports = {
-    init, withdraw, getBlockNumber, getLogs
+    init, withdraw, getBlockNumber, getLogs, estimateGas
 }

@@ -25,8 +25,9 @@ describe("Test total", () => {
         const CashX = await getAt("CashX", "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0")
         console.log(await CashX.roots(0))
         console.log(await CashX.roots(1))
+        
         const { data } = await axios.post('http://localhost:8000/proof', {
-            "note": "cashx-0.1bnbbsc-31337-8bd546ea672bdf70ff3bce29125343afe7a687b59d2138a2fd11d9512a2d51a0a151a61944bd9622a2d95bbd43cad6b318bceff3f7c31324fbb506f8ffed",
+            "note": "cashx-0.1bnbbsc-31337-52c07dc12595a9311474917bacb1e93dc2f3aec887d90a34b653b0694143453cdb95d18b0f23fd0de292f3a715c30a5a1e244e737e2860bf2d3e28c87595",
             "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
         })
         await (await CashX.connect(addr1).withdraw(data.proof, ...data.args)).wait()

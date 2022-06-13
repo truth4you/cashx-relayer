@@ -14,6 +14,8 @@ async function main() {
   await Hasher.deployed()
   const Verifier = await deploy("Verifier")
   await deploy("CashX", Verifier.address, Hasher.address, ethers.utils.parseEther("0.1"), 20, ethers.utils.getAddress("0x0000000000000000000000000000000000000000"))
+  await deploy("CashX", Verifier.address, Hasher.address, ethers.utils.parseEther("1"), 20, ethers.utils.getAddress("0x0000000000000000000000000000000000000000"))
+  await deploy("CashX", Verifier.address, Hasher.address, ethers.utils.parseEther("10"), 20, ethers.utils.getAddress("0x0000000000000000000000000000000000000000"))
   await deploy("Multicall")
 }
 

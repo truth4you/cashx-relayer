@@ -26,7 +26,7 @@ const start = async () => {
     for(let chainId in chains) {
         for(let symbol in chains[chainId].tokens) {
             for(let amount in chains[chainId].tokens[symbol].instanceAddress) {
-                // await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, 0)
+                await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, 0)
                 if(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`) > 0)
                     trees[`tree:${chainId}:${amount}${symbol}`] = MerkleTree.deserialize(JSON.parse(await redis.get(`cashx:${chainId}:${amount}${symbol}:tree`)))
                 else
@@ -44,7 +44,7 @@ const start = async () => {
 }
 
 const fetchEvents = async (chainId, symbol, amount) => {
-    console.log(`tree:${chainId}:${amount}${symbol} working`)
+    // console.log(`tree:${chainId}:${amount}${symbol} working`)
     // const chain = chains[chainId]
     const lastBlock = await getBlockNumber(chainId)
     const fromBlock = Number(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`))
@@ -53,10 +53,10 @@ const fetchEvents = async (chainId, symbol, amount) => {
         const logs = await getLogs(chainId, symbol, amount, fromBlock, toBlock)
         if(logs.length) {
             const tree = trees[`tree:${chainId}:${amount}${symbol}`]
-            console.log("root", tree.root())
+            // console.log("root", tree.root())
             for(const log of logs) {
                 tree.insert(log.topics[1])
-                console.log("added", tree.root(), log.topics[1])
+                // console.log("added", tree.root(), log.topics[1])
             }
             redis.set(`cashx:${chainId}:${amount}${symbol}:tree`, JSON.stringify(tree.serialize()))
         }
