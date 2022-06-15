@@ -24,7 +24,6 @@ const withdraw = async (worker, note, to, coin) => {
     const provider = providers[match.groups.chainId]
     const wallet = new ethers.Wallet(process.env.RELAYER_WALLET, provider)
     const address = chain.tokens[match.groups.symbol].instanceAddress[String(match.groups.amount)]
-    
     const contract = new ethers.Contract(address, abiCashX, wallet)
     const isSwap = coin!=undefined && coin!=match.groups.symbol
     if(isSwap) {
@@ -59,15 +58,9 @@ const withdraw = async (worker, note, to, coin) => {
                 "X-API-KEY": process.env.SWAPZONE_API_KEY
             }
         })
-        res.json({
-            success: true,
-            transaction,
-            status: status.data
-        })
     } else {
         const proof = await worker.prove(note, to, wallet.address)
         const fee = estimateGas(note,proof).add(ethers.utils.parseEther("0.001"))
-        console.log(fee)
         proof.args[4] = fee
         await (await contract.withdraw(proof.proof, ...proof.args)).wait()
     }
@@ -107,6 +100,55 @@ const getLogs = async (chainId, symbol, amount, fromBlock, toBlock) => {
     })
 }
 
+const swapzoneTokens = {
+    "bnbbsc": [31337], //97,
+    "avaxc": [31337] //43113,
+}
+
+const transactions = {}
+const wallets = {}
+
+const checkConfirm = (chainId, hash, id, tm) => {
+    setTimeout(async () => {
+        const transaction = transactions[id]
+        const provider = providers[chainId]
+        const tx = await provider.getTransaction(hash)
+        const blockNumber = await getBlockNumber(chainId)
+        if(blockNumber > tx.blockNumber+10 || tm>20) {
+            transaction.status = "exchanging"
+            const chainIdDst = swapzoneTokens[transaction.to][0]
+            const providerDst = providers[chainIdDst]
+            const wallet = new ethers.Wallet(process.env.RELAYER_WALLET, providerDst)
+            await wallets[id].connect(provider).sendTransaction({ to: wallet.address, value: ethers.utils.parseEther(String(transaction.amountDeposit)) })
+            await wallet.sendTransaction({ to: transaction.addressReceive, value: ethers.utils.parseEther(String(transaction.amountEstimated)) })
+            transaction.status = "finished"
+        } else
+            checkConfirm(chainId, hash, id, tm+1)
+    }, 500)
+}
+
+const listen = (transaction) => {
+    const chainIdSrc = swapzoneTokens[transaction.from][0]
+    const chainIdDst = swapzoneTokens[transaction.to][0]
+    const wallet = ethers.Wallet.createRandom()
+    transaction.addressDeposit = wallet.address
+    const providerSrc = new ethers.providers.JsonRpcProvider(chains[chainIdSrc].url)
+    if(swapzoneTokens[transaction.from][1]==undefined) {
+        providerSrc.on('pending',(tx) => {
+            if(tx.to.toLowerCase()==wallet.address.toLowerCase()) {
+                wallets[transaction.id] = wallet
+                checkConfirm(chainIdSrc, tx.hash, transaction.id, 0)
+                providerSrc.off('pending')
+            }
+        })
+        setTimeout(() => {
+            providerSrc.off('pending')
+        }, 300000)
+    }
+    transactions[transaction.id] = transaction
+    return wallet.address
+}
+
 module.exports = {
-    init, withdraw, getBlockNumber, getLogs, estimateGas
+    init, withdraw, getBlockNumber, getLogs, listen, estimateGas, transactions
 }
