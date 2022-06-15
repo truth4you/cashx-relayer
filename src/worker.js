@@ -1,8 +1,6 @@
-const { ethers } = require("ethers")
 const { createClient } = require('ioredis')
 const MerkleTree = require('fixed-merkle-tree')
 const snarkjs = require('snarkjs')
-const crypto = require('crypto')
 const circomlib = require('circomlib')
 const websnarkUtils = require('websnark/src/utils')
 const buildGroth16 = require('websnark/src/groth16')
