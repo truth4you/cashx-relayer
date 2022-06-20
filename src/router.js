@@ -5,6 +5,8 @@ const { withdraw, estimateGas } = require('./wallet')
 
 const app = express()
 
+let io = null
+
 const parseError = (ex) => {
     if (typeof ex == 'object')
       return (ex.error?.reason ?? null) ? ex.error.reason.replace('execution reverted: ', '') : ex.message
@@ -42,5 +44,16 @@ app.post('/proof', async (req, res) => {
         })
     }
 })
+
+app.get('/broadcast', (req, res) => {
+    io?.sockets.emit('broadcast', {
+        description: 'hello'
+    })
+    res.end()
+})
+
+app.setSocketIO = (_io) => {
+    io = _io
+}
 
 module.exports = app

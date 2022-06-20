@@ -1,5 +1,7 @@
 const express = require('express')
 const app = express()
+const http = require('http').createServer(app)
+const io = require('socket.io')(http)
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const router = require('./src/router')
@@ -13,8 +15,15 @@ app.use(cors({
 app.use(bodyParser.json())
 app.use(router)
 
-app.listen(8000, () => {
-    console.log("Relayer is started!")
+io.on('connection', (socket) => {
+    console.log(socket)
+})
+
+router.setSocketIO(io)
+
+const port = process.argv[2] ?? 8000
+http.listen(port, () => {
+    console.log(`Relayer is started thru ${port}!`)
 })
 wallet.init()
 worker.start()
