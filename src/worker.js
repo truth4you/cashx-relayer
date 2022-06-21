@@ -132,6 +132,7 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
         pathElements,
         pathIndices
     }
+    console.log("input", input)
     const proofData = await websnarkUtils.genWitnessAndProve(groth16, input, circuit, key)
     console.log("proofData", proofData)
     const { proof } = websnarkUtils.toSolidityInput(proofData)
