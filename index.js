@@ -10,7 +10,7 @@ const wallet = require('./src/wallet')
 require('dotenv').config()
 
 app.use(cors({
-    origin: 'https://cash-x.herokuapp.com'
+    origin: '*'
 }))
 app.use(bodyParser.json())
 app.use(router)

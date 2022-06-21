@@ -2,9 +2,11 @@
 const express = require('express')
 const worker = require('./worker')
 const { withdraw, estimateGas, lastGas } = require('./wallet')
-
+const cors = require('cors')
 const app = express()
-
+app.use(cors({
+    origin: '*'
+}))
 let io = null
 
 const parseError = (ex) => {
