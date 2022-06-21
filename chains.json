@@ -4,28 +4,52 @@
         "icon": "eth",
         "url": "https://speedy-nodes-nyc.moralis.io/9c7d826e61445651ed4326f8/eth/mainnet",
         "coin": "ethereum",
-        "multicall": "0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441"
+        "multicall": "0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441",
+        "tokens": {}
     },
-    "31337": {
+    "97": {
         "name": "Binance",
         "icon": "bsc",
-        "url": "http://localhost:8545",
+        "symbol":" BNB",
+        "url": "https://speedy-nodes-nyc.moralis.io/9c7d826e61445651ed4326f8/bsc/testnet",
+        
         "coin": "binancecoin",
-        "multicall": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+        "multicall": "0x56b379656DE85439E483e4A5c46E60430B2873f1",
         "tokens": {
             "bnbbsc": {
                 "instanceAddress": {
-                    "0.1": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-                    "1": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-                    "10": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+                    "0.1": "0xaA6Ae76211E12aF38A0Db3B0DEc02d18567f7036",
+                    "1": "0xe6E6e1f7BA18187EBdb9441BD65B60Af97e6F1C5",
+                    "10": "0x5757A906B651db23b70eBb42f4F833d9b7D302F7",
+                    "100": "0xb99fcCc19F73b243C9cD1D1Ffa60216A66d27A26"
                 },
                 "deployedBlockNumber": {
-                    "0.1": 0,
-                    "1": 0,
-                    "10": 0
+                    "0.1": 20355232,
+                    "1": 20355232,
+                    "10": 20355232,
+                    "100": 20355953
                 },
                 "miningEnabled": false,
                 "symbol": "BNB",
+                "address": "0xd591BAf9262AD671C00B11b1fD3BC0d45EB24fFE",
+                "decimals": 18
+            },
+            "usdt": {
+                "instanceAddress": {
+                    "0.1": "0x68d2e5B42A2b5522142127BFb6687a1c9F0B8206",
+                    "1": "0x6f06ac974A3C06eC6F80368EaDcE3FDad48F6c68",
+                    "10": "0x21eAF51378B14A876405ae258af3Cdd9d5C65560",
+                    "100": "0x6eA6dAdb0190b35E4Fb410D9ecb165889AEE6Cc7"
+                },
+                "deployedBlockNumber": {
+                    "0.1": 20355232,
+                    "1": 20355232,
+                    "10": 20355232,
+                    "100": 20355953
+                },
+                "miningEnabled": false,
+                "symbol": "USDT",
+                "address": "0x95643CeD4DF4B5Bc605a4CEE79f470497CaF5dD9",
                 "decimals": 18
             }
         }
@@ -36,7 +60,8 @@
         "symbol": "AVAX",
         "decimals": 18,
         "url": "https://api.avax-test.network/ext/bc/C/rpc",
-        "coin": "avalanche-2"
+        "coin": "avalanche-2",
+        "tokens": {}
     },
     "4002": {
         "name": "Fantom",
@@ -44,6 +69,7 @@
         "symbol": "FTM",
         "decimals": 18,
         "url": "https://rpc.testnet.fantom.network/",
-        "coin": "fantom"
+        "coin": "fantom",
+        "tokens": {}
     }
 }

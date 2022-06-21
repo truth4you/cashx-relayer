@@ -1,11 +1,12 @@
 const { createClient } = require('ioredis')
+const { ethers, BigNumber } = require("ethers")
 const MerkleTree = require('fixed-merkle-tree')
 const snarkjs = require('snarkjs')
 const circomlib = require('circomlib')
 const websnarkUtils = require('websnark/src/utils')
 const buildGroth16 = require('websnark/src/groth16')
 const fs = require('fs')
-const { getBlockNumber, getLogs, getTree } = require('./wallet')
+const { getBlockNumber, getLogs, getLeaves, checkNullifier } = require('./wallet')
 const chains = require('../chains.json')
 
 const pedersenHash = data => circomlib.babyJub.unpackPoint(circomlib.pedersenHash.hash(data))[0]
@@ -21,18 +22,18 @@ const trees = {}
 const start = async () => {
     console.log("Worker is started!")
     groth16 = await buildGroth16()
-    for(let chainId in chains) {
-        for(let symbol in chains[chainId].tokens) {
-            for(let amount in chains[chainId].tokens[symbol].instanceAddress) {
-                await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, 0)
-                if(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`) > 0)
-                    trees[`tree:${chainId}:${amount}${symbol}`] = MerkleTree.deserialize(JSON.parse(await redis.get(`cashx:${chainId}:${amount}${symbol}:tree`)))
-                else
-                    trees[`tree:${chainId}:${amount}${symbol}`] = new MerkleTree(20)
-                setTimeout(()=>fetchEvents(chainId, symbol, amount), 200)
-            }
-        }
-    }
+    // for(let chainId in chains) {
+    //     for(let symbol in chains[chainId].tokens) {
+    //         for(let amount in chains[chainId].tokens[symbol].instanceAddress) {
+    //             await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, 0)
+    //             if(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`) > 0)
+    //                 trees[`tree:${chainId}:${amount}${symbol}`] = MerkleTree.deserialize(JSON.parse(await redis.get(`cashx:${chainId}:${amount}${symbol}:tree`)))
+    //             else
+    //                 trees[`tree:${chainId}:${amount}${symbol}`] = new MerkleTree(20)
+    //             setTimeout(()=>fetchEvents(chainId, symbol, amount), 200)
+    //         }
+    //     }
+    // }
     // await redis.set("cashx:avax:block",0)
     // if(await redis.get("cashx:avax:block")) {
     //     // const convert = (_, val) => (typeof val === 'string' && !val.startsWith('0x') ? snarkjs.bigInt(val) : val)
@@ -81,6 +82,13 @@ function createDeposit(nullifier, secret) {
     return deposit
 }
 
+function getNullifierHash(note) {
+    const buf = Buffer.from(note, 'hex')
+    const nullifier = snarkjs.bigInt.leBuff2int(buf.slice(0, 31))
+    const hash = pedersenHash(nullifier.leInt2Buff(31))
+    return toHex(hash, 32)
+}
+
 function toHex(number, length = 32) {
     const str = number instanceof Buffer ? number.toString('hex') : snarkjs.bigInt(number).toString(16)
     return '0x' + str.padStart(length * 2, '0')
@@ -97,10 +105,20 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
     const nullifier = snarkjs.bigInt.leBuff2int(buf.slice(0, 31))
     const secret = snarkjs.bigInt.leBuff2int(buf.slice(31, 62))
     const deposit = createDeposit(nullifier, secret)
-    const tree = trees[`tree:${chainId}:${amount}${symbol}`]
+    
+    if(await checkNullifier(chainId, symbol, amount, deposit.nullifierHex)){
+        throw new Error("The note has been already spent")
+    }
+    console.time("leaves")
+    const tree = trees[`tree:${chainId}:${amount}${symbol}`] || new MerkleTree(20)
+    const leaves = await getLeaves(chainId, symbol, amount )
+    const len = tree.elements().length
+    tree.bulkInsert(leaves.slice(len))
+    console.timeEnd("leaves")
     const index = tree.indexOf(deposit.commitmentHex, (el1, el2) => {
         return snarkjs.bigInt(el1)==snarkjs.bigInt(el2)
     })
+    
     if(index<0) throw new Error('The note has not deposited')
     const { pathElements, pathIndices } = tree.path(index)
     const input = {
@@ -131,4 +149,4 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
     }
 }
 
-module.exports = { start, prove }
+module.exports = { start, prove, getNullifierHash }

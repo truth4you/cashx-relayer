@@ -124,6 +124,12 @@ module.exports = {
       url: "http://localhost:8548/",
       chainId: 8548,
     },   
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      chainId: 97,
+      gasPrice: 20000000000,
+      accounts: ["a49468e12797469ce53da63286054aa58b9374f3711a95f2dea0d06cbf3ba7f6"] 
+    },
   },
   etherscan: {
     apiKey: {

@@ -20,9 +20,9 @@ const deploy = async (contractName, ...args)=>{
     await contract.deployed()
     await sleep(1000)
     console.log("deployed", contractName, contract.address)
-    // await updateABI(contractName)
-    // if(await verify(contract.address,[...args]))
-    //     console.log("verified", contractName)
+    await updateABI(contractName)
+    if(await verify(contract.address,[...args]))
+        console.log("verified", contractName)
     return contract
 }
   

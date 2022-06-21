@@ -1,7 +1,7 @@
 // const { ethers } = require('ethers')
 const express = require('express')
 const worker = require('./worker')
-const { withdraw, estimateGas } = require('./wallet')
+const { withdraw, estimateGas, lastGas } = require('./wallet')
 
 const app = express()
 
@@ -14,10 +14,12 @@ const parseError = (ex) => {
 }
 
 app.post('/withdraw', async (req, res) => {
+
     try {
-        await withdraw(worker, req.body.note, req.body.recipient, req.body.coin)
+        const id = await withdraw(worker, req.body.note, req.body.recipient, req.body.coin)
         res.json({
             success: true,
+            id: id
         })
     } catch(ex) {
         // throw ex
@@ -31,7 +33,7 @@ app.post('/withdraw', async (req, res) => {
 app.post('/proof', async (req, res) => {
     try {
         const proof = await worker.prove(req.body.note, req.body.recipient)
-        const gas = await estimateGas(req.body.note, proof)
+        const gas = lastGas.gt(0) ? lastGas : await estimateGas(req.body.note, proof)
         res.json({
             success: true,
             ...proof,

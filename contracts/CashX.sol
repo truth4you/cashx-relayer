@@ -14,7 +14,8 @@ contract CashX is MerkleTreeWithHistory {
 
   mapping(bytes32 => bool) public nullifierHashes;
   // we store all commitments just to prevent accidental deposits with the same commitment
-  mapping(bytes32 => bool) public commitments;
+  mapping(bytes32 => bool) public deposited;
+  bytes32[] private commitments;
   address public token;
   bool private _entered;
 
@@ -45,11 +46,16 @@ contract CashX is MerkleTreeWithHistory {
     token = _token;
   }
 
+  function leaves() public view returns(bytes32[] memory) {
+    return commitments;
+  } 
+
   function deposit(bytes32 _commitment) external payable nonReentrant {
-    require(!commitments[_commitment], "The commitment has been submitted");
+    require(!deposited[_commitment], "The commitment has been submitted");
 
     uint32 insertedIndex = _insert(_commitment);
-    commitments[_commitment] = true;
+    deposited[_commitment] = true;
+    commitments.push(_commitment);
     _processDeposit();
 
     emit Deposit(_commitment, insertedIndex, block.timestamp);
