@@ -7,7 +7,7 @@ const app = express()
 app.use(cors({
     origin: '*'
 }))
-let io = null
+// let io = null
 
 const parseError = (ex) => {
     if (typeof ex == 'object')
@@ -50,15 +50,15 @@ app.post('/proof', async (req, res) => {
     }
 })
 
-app.get('/broadcast', (req, res) => {
-    io?.sockets.emit('broadcast', {
-        description: 'hello'
-    })
-    res.end()
-})
+// app.get('/broadcast', (req, res) => {
+//     io?.sockets.emit('broadcast', {
+//         description: 'hello'
+//     })
+//     res.end()
+// })
 
-app.setSocketIO = (_io) => {
-    io = _io
-}
+// app.setSocketIO = (_io) => {
+//     io = _io
+// }
 
 module.exports = app
