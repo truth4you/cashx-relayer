@@ -1,5 +1,4 @@
-const { createClient } = require('ioredis')
-const { ethers, BigNumber } = require("ethers")
+// const { createClient } = require('ioredis')
 const MerkleTree = require('fixed-merkle-tree')
 const snarkjs = require('snarkjs')
 const circomlib = require('circomlib')
@@ -7,14 +6,12 @@ const websnarkUtils = require('websnark/src/utils')
 const buildGroth16 = require('websnark/src/groth16')
 const fs = require('fs')
 const { getBlockNumber, getLogs, getLeaves, checkNullifier } = require('./wallet')
-const chains = require('../chains.json')
-
 const pedersenHash = data => circomlib.babyJub.unpackPoint(circomlib.pedersenHash.hash(data))[0]
 let groth16
 const circuit = require('../key/withdraw.json')
 const key = fs.readFileSync(__dirname + '/../key/key.bin').buffer
 
-const redis = createClient(process.env.REDIS_URL)
+// const redis = createClient(process.env.REDIS_URL)
 
 const trees = {}
 // const redisSubscribe = createClient(process.env.REDIS_URL)
@@ -42,34 +39,34 @@ const start = async () => {
     // fetchEvents()
 }
 
-const fetchEvents = async (chainId, symbol, amount) => {
-    // console.log(`tree:${chainId}:${amount}${symbol} working`)
-    // const chain = chains[chainId]
-    const lastBlock = await getBlockNumber(chainId)
-    const fromBlock = Number(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`))
-    if(lastBlock > fromBlock) {
-        const toBlock = Math.min(lastBlock, fromBlock + 2000)
-        const logs = await getLogs(chainId, symbol, amount, fromBlock, toBlock)
-        if(logs.length) {
-            const tree = trees[`tree:${chainId}:${amount}${symbol}`]
-            // console.log("root", tree.root())
-            for(const log of logs) {
-                tree.insert(log.topics[1])
-                // console.log("added", tree.root(), log.topics[1])
-            }
-            redis.set(`cashx:${chainId}:${amount}${symbol}:tree`, JSON.stringify(tree.serialize()))
-        }
-        // const cashX = new ethers.Contract("0x330bdFADE01eE9bF63C209Ee33102DD334618e0a", abiCashX, provider)
-        // const logs = await cashX.queryFilter({
-        //     topics: [
-        //         "0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196"
-        //     ]        
-        // }, fromBlock, toBlock)
-        // console.log(logs)
-        await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, toBlock)
-    }
-    setTimeout(() => fetchEvents(chainId, symbol, amount), 10000)
-}
+// const fetchEvents = async (chainId, symbol, amount) => {
+//     // console.log(`tree:${chainId}:${amount}${symbol} working`)
+//     // const chain = chains[chainId]
+//     const lastBlock = await getBlockNumber(chainId)
+//     const fromBlock = Number(await redis.get(`cashx:${chainId}:${amount}${symbol}:block`))
+//     if(lastBlock > fromBlock) {
+//         const toBlock = Math.min(lastBlock, fromBlock + 2000)
+//         const logs = await getLogs(chainId, symbol, amount, fromBlock, toBlock)
+//         if(logs.length) {
+//             const tree = trees[`tree:${chainId}:${amount}${symbol}`]
+//             // console.log("root", tree.root())
+//             for(const log of logs) {
+//                 tree.insert(log.topics[1])
+//                 // console.log("added", tree.root(), log.topics[1])
+//             }
+//             redis.set(`cashx:${chainId}:${amount}${symbol}:tree`, JSON.stringify(tree.serialize()))
+//         }
+//         // const cashX = new ethers.Contract("0x330bdFADE01eE9bF63C209Ee33102DD334618e0a", abiCashX, provider)
+//         // const logs = await cashX.queryFilter({
+//         //     topics: [
+//         //         "0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196"
+//         //     ]        
+//         // }, fromBlock, toBlock)
+//         // console.log(logs)
+//         await redis.set(`cashx:${chainId}:${amount}${symbol}:block`, toBlock)
+//     }
+//     setTimeout(() => fetchEvents(chainId, symbol, amount), 10000)
+// }
 
 function createDeposit(nullifier, secret) {
     const deposit = { nullifier, secret }
