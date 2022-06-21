@@ -33,7 +33,7 @@ app.post('/withdraw', async (req, res) => {
 })
 
 app.post('/proof', async (req, res) => {
-    console.log(req.body.note)
+    
     try {
         const proof = await worker.prove(req.body.note, req.body.recipient)
         const gas = lastGas.gt(0) ? lastGas : await estimateGas(req.body.note, proof)

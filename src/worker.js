@@ -115,9 +115,10 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
     const index = tree.indexOf(deposit.commitmentHex, (el1, el2) => {
         return snarkjs.bigInt(el1)==snarkjs.bigInt(el2)
     })
-    
+    console.log("index", index)
     if(index<0) throw new Error('The note has not deposited')
     const { pathElements, pathIndices } = tree.path(index)
+    console.log("input")
     const input = {
         root: tree.root(),
         nullifierHash: deposit.nullifierHash,
@@ -132,7 +133,9 @@ const prove = async (note, recipient, relayer = 0, fee = 0, refund = 0) => {
         pathIndices
     }
     const proofData = await websnarkUtils.genWitnessAndProve(groth16, input, circuit, key)
+    console.log("proofData", proofData)
     const { proof } = websnarkUtils.toSolidityInput(proofData)
+    console.log("proof", proof)
     return {
         proof,
         args: [
