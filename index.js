@@ -22,8 +22,9 @@ app.use(router)
 // router.setSocketIO(io)
 
 const port = process.argv[2] ?? 8000
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Relayer is started thru ${port}!`)
 })
+server.timeout = 600000
 wallet.init()
 worker.start()
