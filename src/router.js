@@ -36,7 +36,6 @@ app.post('/proof', async (req, res) => {
     
     try {
         const proof = await worker.prove(req.body.note, req.body.recipient)
-        console.log(proof)
         const gas = lastGas.gt(0) ? lastGas : await estimateGas(req.body.note, proof)
         
         console.log(gas)
