@@ -57,7 +57,8 @@ const getAt = async (contractName, contractAddress)=>{
 }
 
 const verify = async (contractAddress, args = []) => {
-    if(network=='localhost' || network=='hardhat') return false
+    return false
+    if(network.name=='localhost' || network.name=='hardhat') return false
     try {
         await hre.run("verify:verify", {
             address: contractAddress,
