@@ -94,6 +94,25 @@ module.exports = {
             runs: 200
           }
         }
+      },
+      {
+        version: "0.8.19",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.8.22",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+          // viaIR: true
+        }
       }
     ]
   },
@@ -110,7 +129,11 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 31337
+      // chainId: 31337,
+      forking: {
+        //url: `https://mainnet.infura.io/v3/585a01358fdc405385f7dfc820942596`
+        url: `https://rpc.ankr.com/eth_sepolia`
+      },
     },
     chain1: {
       url: "http://localhost:8546/",
@@ -128,7 +151,29 @@ module.exports = {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
       chainId: 97,
       gasPrice: 20000000000,
-      accounts: ["a49468e12797469ce53da63286054aa58b9374f3711a95f2dea0d06cbf3ba7f6"] 
+      accounts: [process.env.BSC_TESTNET_DEPLOYER] 
+    },
+    goerli: {
+      url: "https://rpc.ankr.com/eth_goerli",
+      chainId: 5,
+      // gasPrice: 20000000000,
+      accounts: [process.env.GOERLI_DEPLOYER] 
+    },
+    sepolia: {
+      url: `https://rpc.ankr.com/eth_sepolia`,
+      chainId: 11155111,
+      // gasPrice: 20000000000,
+      accounts: [process.env.SEPOLIA_DEPLOYER] 
+    },
+    basesepolia: {
+      url: 'https://base-sepolia.publicnode.com',
+      chainId: 84532,
+      accounts: [process.env.SEPOLIA_DEPLOYER],
+    },
+    puppy: {
+      url: "https://puppynet.shibrpc.com",
+      chainId: 719,
+      gasPrice: 20000000000,
     },
   },
   etherscan: {
@@ -136,8 +181,22 @@ module.exports = {
       bscTestnet: "GJQFD5BXR754QEI1221TPAM94IRIE7B2FD",
       avalancheFujiTestnet: "ZGR21YGDGQSIVXI5B2NR5K73MFCDI4QPH8",
       ftmTestnet: "WF1AMWQ7AUZGPAUANYXDMIS3GWB9JJ4CHH",
-      kovan: "55I2YRDX4453DEYQ94MHZUK33DE7MHQZCM"
-    }
+      goerli: "HJNU2TCIRZBH4I3RTB98RI1MRJT8KSJCRG",
+      sepolia: "HJNU2TCIRZBH4I3RTB98RI1MRJT8KSJCRG",
+      basesepolia: "625N7GC5238WP837PCH6D9QI6TE1USBPDT",
+      kovan: "55I2YRDX4453DEYQ94MHZUK33DE7MHQZCM",
+      // puppy: "55I2YRDX4453DEYQ94MHZUK33DE7MHQZCM"
+    },
+    customChains: [
+      {
+        network: "basesepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          browserURL: "https://sepolia.basescan.org"
+        }
+      },
+    ]
   },
   abiExporter: {
     path: './abi',

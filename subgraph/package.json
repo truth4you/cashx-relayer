@@ -1,0 +1,23 @@
+{
+  "name": "dca",
+  "description": "PancakeSwap Subgraph",
+  "version": "1.0.0",
+  "repository": "git@github.com:pancakeswap/pancake-subgraph.git",
+  "author": "PancakeSwap",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "auth": "graph auth --studio 0e99bbe8a775b4f5e54c36606a5a5775",
+    "create": "graph create dca-pulsechain --node https://node.9inch.io/node",
+    "create:pulsechaintestnet": "graph create dca-pulsechain --node https://node.9inch.io/node",
+    "codegen:ethereum": "graph codegen subgraph-ethereum.yaml",
+    "codegen:pulsechain": "graph codegen subgraph-pulsechain.yaml",
+    "codegen:pulsechaintestnet": "graph codegen subgraph-pulsechaintestnet.yaml",
+    "build:ethereum": "graph build subgraph-ethereum.yaml",
+    "build:pulsechain": "graph build subgraph-pulsechain.yaml",
+    "build:pulsechaintestnet": "graph build subgraph-pulsechaintestnet.yaml",
+    "deploy:ethereum": "graph deploy --studio 9inch-dca subgraph-ethereum.yaml",
+    "deploy:sepolia": "graph deploy dca --node https://node.9inch.io/node subgraph-sepolia.yaml",
+    "deploy:pulsechain": "graph deploy pulsechain --node https://node.9inch.io/node subgraph-pulsechain.yaml",
+    "deploy:pulsechaintestnet": "graph deploy dca-pulsechaintestnet --node https://node.9inch.io/node subgraph-pulsechaintestnet.yaml"
+  }
+}

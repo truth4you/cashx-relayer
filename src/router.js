@@ -15,8 +15,11 @@ const parseError = (ex) => {
     return ex
 }
 
-app.post('/withdraw', async (req, res) => {
+app.post('/deposit', async (req, res) => {
 
+})
+
+app.post('/withdraw', async (req, res) => {
     try {
         const id = await withdraw(worker, req.body.note, req.body.recipient, req.body.coin)
         res.json({
@@ -33,7 +36,6 @@ app.post('/withdraw', async (req, res) => {
 })
 
 app.post('/proof', async (req, res) => {
-    
     try {
         const proof = await worker.prove(req.body.note, req.body.recipient)
         const gas = lastGas.gt(0) ? lastGas : await estimateGas(req.body.note, proof)

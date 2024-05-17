@@ -13,6 +13,8 @@ contract CashX {
 
 	address public owner;
     address public token;
+    address public distributor;
+    IUniswapV2Router02 router;
     bool private _entered;
 
     mapping(uint32 => uint32) public deposits;
@@ -24,9 +26,14 @@ contract CashX {
 	uint256 public debtFee;
     uint256 public amountFee;
     bool public useFixedFee = true;
+    uint256 private thresholdFee = 0.01 ether;
+    address[] private pathFee;
+            
+    event Deposit(uint256);
+    event Withdrawal(address indexed, uint256);
+    event Swap(address indexed, uint256);
 
-    event Deposit(bytes32 indexed, uint256);
-    event Withdrawal(bytes32 indexed, address indexed, uint256);
+    receive() external payable {}
 
     modifier nonReentrant() {
         require(!_entered, "ReentrancyGuard: reentrant call");
@@ -41,12 +48,22 @@ contract CashX {
 	}
 
     constructor(
+        address _router,
+		address _distributor,
         address _token,
         uint256 _denomination,
         uint256 _amountFee,
         bool _useFixedFee
     ) {
         require(_denomination > 0, "denomination should be greater than 0");
+        require(_distributor!=address(0), "distributor should not be null");
+		require(_router != address(0), "Invalid router");
+		router = IUniswapV2Router02(_router);
+        if(_token!=address(0)) {
+            pathFee.push(_token);
+            pathFee.push(router.WETH());
+        }
+        distributor = _distributor;
         token = _token;
         denomination = _denomination;
         amountFee = _amountFee;
@@ -90,7 +107,7 @@ contract CashX {
         deposits[0]++;
         locked[_hash] = true;
 
-        emit Deposit(_hash, block.timestamp);
+        emit Deposit(block.timestamp);
     }
 
     function withdraw(
@@ -116,10 +133,11 @@ contract CashX {
         withdraws[(withdraws[0] % TIME_HISTORY_SIZE) + 1] = uint32(
             block.timestamp
         );
-		debtFee += fee;
+        debtFee += fee;
+        collectFee();
         withdraws[0]++;
         locked[_hash] = false;
-        emit Withdrawal(_hash, _recipient, block.timestamp);
+        emit Withdrawal(_recipient, block.timestamp);
     }
 
     function claimFee(address _to) public onlyOwner {
@@ -134,15 +152,31 @@ contract CashX {
 		}
     }
 
+    function collectFee() internal {
+        uint256 feeETH = 0;
+        if(token == address(0)) 
+            feeETH = debtFee;
+        else {
+            uint256[] memory amounts = router.getAmountsOut(debtFee, pathFee);
+            if(amounts[amounts.length - 1] >= thresholdFee) {
+                IERC20(token).approve(address(router), debtFee);
+                router.swapExactTokensForETHSupportingFeeOnTransferTokens(debtFee, 0, pathFee, address(this), block.timestamp + 30);
+                feeETH = address(this).balance;
+            }
+        }
+        if(feeETH >= thresholdFee) {
+            (bool success, ) = payable(distributor).call{value: feeETH}("");
+            require(success, "Collect fee failed");
+            debtFee = 0;
+        }
+    }
+
 	function swap(
 		bytes calldata _sig,
         address payable _recipient, 
-		address _router,
 		address[] calldata _path,
 		uint32 _slippage
 	) public {
-		require(_router != address(0), "Invalid router");
-		IUniswapV2Router02 router = IUniswapV2Router02(_router);
 		require(_path[0] == token || token == address(0) && _path[0] == router.WETH(), "Invalid input token");
 		require(token != _path[_path.length - 1], "Invalid output token");
 		bytes32 _hash = sig2hash(_sig);
@@ -158,13 +192,13 @@ contract CashX {
 			// );
 			router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amountIn}(0, _path, _recipient, block.timestamp + 30);
 		} else if(_path[_path.length - 1] == router.WETH()) {
-			IERC20(token).approve(_router, amountIn);
+			IERC20(token).approve(address(router), amountIn);
 		// 	(success,) = _router.call(
 		// 		abi.encodeWithSignature("swapExactTokensForETHSupportingFeeOnTransferTokens(uint,uint,address[],address,uint)", amountIn, 0, _path, _recipient, block.timestamp + 30)
 		// 	);
 			router.swapExactTokensForETHSupportingFeeOnTransferTokens(amountIn, 0, _path, _recipient, block.timestamp + 30);
 		} else {
-			IERC20(token).approve(_router, amountIn);
+			IERC20(token).approve(address(router), amountIn);
 			// (success,) = _router.call(
 			// 	abi.encodeWithSignature("swapExactTokensForTokensSupportingFeeOnTransferTokens(uint256,uint256,address[],address,uint256)", amountIn, 0, _path, _recipient, block.timestamp + 30)
 			// );
@@ -175,8 +209,10 @@ contract CashX {
             block.timestamp
         );
 		debtFee += fee;
+        collectFee();
         swaps[0]++;
         locked[_hash] = false;
+        emit Swap(_recipient, block.timestamp);
 	}
 
 	function setFee(bool _useFixedFee, uint256 _amountFee) public onlyOwner {

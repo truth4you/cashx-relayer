@@ -13,4 +13,10 @@ contract Token is ERC20 {
   function decimals() public view override returns (uint8) {
     return _decimals;
   }
+
+  event Test1();
+  event Test2();
+
+  function drip(address) public {
+  }
 }

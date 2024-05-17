@@ -20,9 +20,9 @@ const deploy = async (contractName, ...args)=>{
     await contract.deployed()
     await sleep(1000)
     console.log("deployed", contractName, contract.address)
-    await updateABI(contractName)
-    if(await verify(contract.address,[...args]))
-        console.log("verified", contractName)
+    // await updateABI(contractName)
+    // if(await verify(contract.address,[...args]))
+    //     console.log("verified", contractName)
     return contract
 }
   
@@ -57,7 +57,7 @@ const getAt = async (contractName, contractAddress)=>{
 }
 
 const verify = async (contractAddress, args = []) => {
-    return false
+    // return false
     if(network.name=='localhost' || network.name=='hardhat') return false
     try {
         await hre.run("verify:verify", {
@@ -76,6 +76,11 @@ const sleep = async (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+async function mineBlock(blocks = 1) {
+    const provider = network.provider
+    for(;blocks>0;blocks--) await provider.send("evm_mine")
+}
+
 module.exports = {
-    getAt, deploy, deployProxy, upgradeProxy, sleep
+    getAt, deploy, deployProxy, upgradeProxy, sleep, mineBlock, verify
 }

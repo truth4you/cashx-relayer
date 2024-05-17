@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon index.js",
     "deploy": "vercel deploy --prod",
-    "start": "node index.js $PORT"
+    "start": "node index.js $PORT",
+    "node1": "hardhat node --config hardhat.node1.config.js --port 8546",
+    "node2": "hardhat node --config hardhat.node2.config.js --port 8547",
+    "node3": "hardhat node --config hardhat.node3.config.js --port 8548"
   },
   "author": "truth4you",
   "devDependencies": {
@@ -17,10 +20,21 @@
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/upgrades-core": "^1.15.0",
+    "@traderjoe-xyz/core": "^2.4.6",
+    "@uniswap/universal-router": "^1.6.0",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@uniswap/v3-periphery": "^1.4.4",
+    "ethers-multicall": "^0.2.3",
     "hardhat": "^2.9.7",
-    "vercel": "^23.1.2"
+    "solmate": "^6.2.0",
+    "vercel": "^23.1.2",
+    "@graphprotocol/graph-cli": "^0.21.0",
+    "@graphprotocol/graph-ts": "^0.20.0",
+    "typescript": "^4.3.5"
   },
   "dependencies": {
+    "@chainlink/contracts-ccip": "^1.4.0",
     "axios": "^0.26.1",
     "body-parser": "^1.20.0",
     "chai": "^4.2.0",
@@ -33,8 +47,8 @@
     "http": "^0.0.1-security",
     "ioredis": "^4.28.5",
     "mocha": "^8.1.3",
+    "nextjs-cors": "^2.1.0",
     "socket.io": "^4.5.1",
-    "websnark": "git+https://github.com/tornadocash/websnark.git#4c0af6a8b65aabea3c09f377f63c44e7a58afa6d",
-    "nextjs-cors": "^2.1.0"
+    "websnark": "git+https://github.com/tornadocash/websnark.git#4c0af6a8b65aabea3c09f377f63c44e7a58afa6d"
   }
 }

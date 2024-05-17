@@ -1,9 +1,10 @@
 const { ethers } = require("hardhat")
 const { deploy } = require("../scripts/utils")
 
-const DEPOSIT_SIG = ethers.utils.id("deposit(bytes)").slice(0, 10)
-const WITHDRAW_SIG = ethers.utils.id("withdraw(bytes,address)").slice(0, 10)
-const SWAP_SIG = ethers.utils.id("swap(bytes,address,address,address[],uint32)").slice(0, 10)
+const BALANCE_SIG = ethers.utils.id("balanceOf(bytes)").slice(0, 10)
+const DEPOSIT_SIG = ethers.utils.id("deposit(bytes,uint256)").slice(0, 10)
+const WITHDRAW_SIG = ethers.utils.id("withdraw(bytes,uint256,address)").slice(0, 10)
+const SWAP_SIG = ethers.utils.id("swap(bytes,uint256,address,address,address[],uint32)").slice(0, 10)
 
 async function msg2sig(wallet, msg) {
     const payload = ethers.utils.defaultAbiCoder.encode(["bytes4", "string"], [msg, "cashx-verifier"])

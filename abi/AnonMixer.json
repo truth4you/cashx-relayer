@@ -3,33 +3,38 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_router",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_distributor",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
         "name": "_token",
         "type": "address"
       },
       {
-        "internalType": "uint256",
-        "name": "_denomination",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "_swapRouter",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_denominators",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "_feeRates",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "_feePath",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_feeReceiver",
+        "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "_amountFee",
+        "name": "_feeETH",
         "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "_useFixedFee",
-        "type": "bool"
       }
     ],
     "stateMutability": "nonpayable",
@@ -62,6 +67,12 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "name": "Swap",
@@ -70,12 +81,6 @@
   {
     "anonymous": false,
     "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
       {
         "indexed": false,
         "internalType": "uint256",
@@ -87,21 +92,14 @@
     "type": "event"
   },
   {
-    "inputs": [],
-    "name": "TIME_HISTORY_SIZE",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
+        "internalType": "bytes",
+        "name": "_sig",
+        "type": "bytes"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "amountFee",
+    "name": "balanceOf",
     "outputs": [
       {
         "internalType": "uint256",
@@ -126,37 +124,16 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "debtFee",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "denomination",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "bytes",
         "name": "_sig",
         "type": "bytes"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
       }
     ],
     "name": "deposit",
@@ -165,14 +142,34 @@
     "type": "function"
   },
   {
-    "inputs": [
+    "inputs": [],
+    "name": "feeETH",
+    "outputs": [
       {
-        "internalType": "uint32",
+        "internalType": "uint256",
         "name": "",
-        "type": "uint32"
+        "type": "uint256"
       }
     ],
-    "name": "deposits",
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeInAmount",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeRate",
     "outputs": [
       {
         "internalType": "uint32",
@@ -185,7 +182,7 @@
   },
   {
     "inputs": [],
-    "name": "distributor",
+    "name": "feeReceiver",
     "outputs": [
       {
         "internalType": "address",
@@ -197,19 +194,28 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "locked",
+    "inputs": [],
+    "name": "getConfig",
     "outputs": [
       {
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -231,17 +237,108 @@
   {
     "inputs": [
       {
-        "internalType": "bool",
-        "name": "_useFixedFee",
-        "type": "bool"
+        "internalType": "uint256[]",
+        "name": "_denominators",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "removeDenominators",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_denominators",
+        "type": "uint256[]"
       },
       {
+        "internalType": "uint32[]",
+        "name": "_feeRates",
+        "type": "uint32[]"
+      }
+    ],
+    "name": "setDenominators",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_feeDefaultRate",
+        "type": "uint32"
+      }
+    ],
+    "name": "setFeeDefaultRate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
-        "name": "_amountFee",
+        "name": "_feeETH",
         "type": "uint256"
       }
     ],
-    "name": "setFee",
+    "name": "setFeeETH",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bool",
+        "name": "_feeInAmount",
+        "type": "bool"
+      }
+    ],
+    "name": "setFeeInAmount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_feeReceiver",
+        "type": "address"
+      }
+    ],
+    "name": "setFeeReceiver",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_swapRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setSwapRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_thresholdFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "setThresholdFee",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -254,7 +351,12 @@
         "type": "bytes"
       },
       {
-        "internalType": "address payable",
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
         "name": "_recipient",
         "type": "address"
       },
@@ -275,25 +377,6 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "name": "swaps",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "token",
     "outputs": [
@@ -307,16 +390,16 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "useFixedFee",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
       }
     ],
-    "stateMutability": "view",
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -327,6 +410,11 @@
         "type": "bytes"
       },
       {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
         "internalType": "address payable",
         "name": "_recipient",
         "type": "address"
@@ -334,26 +422,7 @@
     ],
     "name": "withdraw",
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "name": "withdraws",
-    "outputs": [
-      {
-        "internalType": "uint32",
-        "name": "",
-        "type": "uint32"
-      }
-    ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

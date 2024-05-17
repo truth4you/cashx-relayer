@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import {IJoeRouter02} from "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter02.sol";
+// import {IUniversalRouter} from "@uniswap/universal-router/contracts/interfaces/IUniversalRouter.sol";
+// import {IVerifier} from "./Verifier.sol";
+import "hardhat/console.sol";
+
+enum DEPOSITABLE {
+    NONE, ALLOWED, DENIED
+}
+
+contract MixerConfig {
+    mapping(address => address) private _mixers;
+
+	address public owner;
+
+    address public feeReceiver;
+    bool public feeInAmount = false;
+    
+    uint256 private thresholdFee = 0.01 ether;
+    bool private _entered;
+            
+    modifier nonReentrant() {
+        require(!_entered, "ReentrancyGuard: reentrant call");
+        _entered = true;
+        _;
+        _entered = false;
+    }
+
+	modifier onlyOwner() {
+		require(owner==msg.sender, "Only owner can call");
+		_;
+	}
+
+    constructor(
+        address _swapRouter,
+		address _feeReceiver
+    ) {
+		owner = msg.sender;
+        require(_swapRouter != address(0), "Invalid router");
+        swapRouter = IUniswapV2Router02(_swapRouter);
+        feeReceiver = _feeReceiver;
+    }
+
+    function balanceOf(address _token, bytes calldata _sig) public view returns (uint256) {
+        IMixer mixer = IMixer(_mixers[_token]);
+        return mixer.balanceOf(_sig);
+    }
+
+    function deposit(address _token, bytes calldata _sig, uint256 _amount) external payable nonReentrant {
+        IMixer mixer = IMixer(_mixers[_token]);
+        mixer.deposit{ value: msg.value }(_sig, _amount);
+        emit Deposit(_token, _amount);
+    }
+
+    function withdraw(address _token, bytes calldata _sig, uint256 _amount, address payable _recipient) external nonReentrant {
+        IMixer mixer = IMixer(_mixers[_token]);
+        mixer.withdraw(_sig, _amount, _recipient);
+        emit Withdrawal(_token, _withdrawals);
+    }
+
+    function claimFee(address _to) public {
+        if(_debtFee > 0) {
+			if (token == address(0)) {
+				(bool success, ) = payable(_to).call{value: _debtFee}("");
+				require(success, "Claiming fee failed");
+			} else {
+				IERC20(token).transfer(_to, _debtFee);
+			}
+			_debtFee = 0;
+		}
+    }
+
+    function sendFee() internal {
+        if(feeReceiver==address(0))
+            return;
+
+        uint256 _feeTotal = 0;
+        if(token == address(0)) {
+            _feeTotal = _debtFee;
+            _debtFee = 0;
+        } else {
+            uint256[] memory _amounts = swapRouter.getAmountsOut(_debtFee, feePath);
+            if(_amounts[_amounts.length - 1] >= thresholdFee) {
+                IERC20(token).approve(address(swapRouter), _debtFee);
+                swapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(_debtFee, 0, feePath, address(this), block.timestamp + 30);
+                _debtFee = 0;
+            }
+            _feeTotal = address(this).balance;
+        }
+        if(_feeTotal > 0) {
+            (bool success, ) = payable(feeReceiver).call{value: _feeTotal}("");
+            require(success, "Sending fee failed");
+        }
+    }
+
+	function swap(
+		bytes calldata _sig,
+        uint256 _amount,
+        address _recipient, 
+		address[] calldata _path,
+		uint32 _slippage
+	) public {
+        bytes32 _hashDeposited = _sig.deposited();
+        require(deposited[_hashDeposited] > 0, "Invalid commitment");
+
+        bytes32 _hashWithdrawn = _sig.withdrawn();
+        uint256 _withdrawable = deposited[_hashDeposited] - withdrawn[_hashWithdrawn];
+
+        uint256 _withdrawals = _amount > 0 ? _amount : _withdrawable;
+        require(_withdrawable >= _withdrawals, "Insufficient withdrawable tokens");
+
+        withdrawn[_hashWithdrawn] += _withdrawals;
+
+        require(_path[0] == token || token == address(0) && _path[0] == swapRouter.WETH(), "Invalid input token");
+
+        address _tokenOut = _path[_path.length - 1];
+		require(token != _tokenOut, "Invalid output token");
+
+        uint256[] memory _amounts = swapRouter.getAmountsOut(_withdrawals, _path);
+        uint256 _amountMinOut = _amounts[_path.length - 1] * (10000 - _slippage) / 10000;
+        uint256 _amountOut = 0;
+        address _receiver = _recipient;
+		if(token == address(0)) {
+            _amountOut = IERC20(_tokenOut).balanceOf(_receiver);
+			swapRouter.swapExactETHForTokensSupportingFeeOnTransferTokens{value: _withdrawals}(_amountMinOut, _path, _receiver, block.timestamp + 30);
+            _amountOut = IERC20(_tokenOut).balanceOf(_receiver) - _amountOut;
+		} else if(_tokenOut == swapRouter.WETH()) {
+            _amountOut = _receiver.balance;
+			IERC20(token).approve(address(swapRouter), _withdrawals);
+			swapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(_withdrawals, _amountMinOut, _path, _receiver, block.timestamp + 30);
+            _amountOut = _receiver.balance - _amountOut;
+		} else {
+            _amountOut = IERC20(_tokenOut).balanceOf(_receiver);
+			IERC20(token).approve(address(swapRouter), _withdrawals);
+			swapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(_withdrawals, _amountMinOut, _path, _receiver, block.timestamp + 30);
+            _amountOut = IERC20(_tokenOut).balanceOf(_receiver) - _amountOut;
+		}
+
+        emit Swap(_tokenOut, _withdrawals, _amountOut);
+	}
+
+    function setDenominators(uint256[] memory _denominators, uint32[] memory _feeRates) public onlyOwner {
+        if(_denominators.length > 0) {
+            for(uint256 i = 0;i<_denominators.length;i++) {
+                uint256 _denominator = _denominators[i];
+                if(depositables[_denominator] == DEPOSITABLE.NONE)
+                    denominators.push(_denominator);
+                depositables[_denominator] = DEPOSITABLE.ALLOWED;
+                if(_feeRates.length > i)
+                    feeRates[_denominator] = _feeRates[i];
+            }
+        }
+    }
+
+    function removeDenominators(uint256[] memory _denominators) public onlyOwner {
+        if(_denominators.length > 0) {
+            for(uint256 i = 0;i<_denominators.length;i++) {
+                uint256 _denominator = _denominators[i];
+                if(depositables[_denominator] == DEPOSITABLE.ALLOWED)
+                    depositables[_denominator] = DEPOSITABLE.DENIED;
+            }
+        }
+    }
+
+    function setSwapRouter(address _swapRouter) public onlyOwner {
+        require(_swapRouter != address(0), "Invalid router");
+        swapRouter = IUniswapV2Router02(_swapRouter);
+        if(token != address(0)) {
+            feePath[feePath.length - 1] = swapRouter.WETH();
+        }
+    }
+    
+    function setFeeInAmount(bool _feeInAmount) public onlyOwner {
+        feeInAmount = _feeInAmount;
+    }
+    
+    function setFeeReceiver(address _feeReceiver) public onlyOwner {
+        feeReceiver = _feeReceiver;
+    }
+    
+    function setFeeETH(uint256 _feeETH) public onlyOwner {
+        feeETH = _feeETH;
+    }
+    
+    function setThresholdFee(uint256 _thresholdFee) public onlyOwner {
+        thresholdFee = _thresholdFee;
+    }
+    
+    function setFeeDefaultRate(uint32 _feeDefaultRate) public onlyOwner {
+        feeRate = _feeDefaultRate;
+    }
+    
+    function transferOwnership(address _owner) public onlyOwner {
+        owner = _owner;
+    }
+
+    function getConfig() public view returns (
+        bool, uint256[] memory, uint32[] memory, uint256
+    ) {
+        uint _count = 0;
+        if(depositables[0]==DEPOSITABLE.ALLOWED) {
+            _count = 1;
+        } else {
+            for(uint i = 0;i<denominators.length;i++) {
+                uint256 _denomiator = denominators[i];
+                if(depositables[_denomiator]==DEPOSITABLE.ALLOWED)
+                    _count ++;
+            }
+        }
+        if(_count==0)
+            revert("Mixer has not been initialized");
+        uint256[] memory _denomiators = new uint256[](_count);
+        uint32[] memory _feeRates = new uint32[](_count);
+        if(depositables[0]==DEPOSITABLE.ALLOWED) {
+            _denomiators[0] = 0;
+            _feeRates[0] = feeRates[0];
+        } else {
+            uint _index = 0;
+            for(uint i = 0;i<denominators.length;i++) {
+                uint256 _denomiator = denominators[i];
+                if(depositables[_denomiator]==DEPOSITABLE.ALLOWED) {
+                    _denomiators[_index] = _denomiator;
+                    _feeRates[_index] = feeRates[_denomiator];
+                    _index++;
+                }
+            }
+        }
+        return (
+            feeInAmount, _denomiators, _feeRates, feeETH
+        );
+    }
+}

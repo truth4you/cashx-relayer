@@ -1,0 +1,27 @@
+type DCAOrder @entity {
+  id: ID!
+  amountIn: BigInt!
+  tokenIn: String!
+  tokenOut: String!
+  numOfOrders: Int!
+  interval: BigInt!
+  user: String!
+  minPrice: BigInt
+  maxPrice: BigInt
+  createdAt: BigInt!
+  closedAt: BigInt
+  createdHash: String!
+  closedHash: String
+  status: String!
+  executedOrders: [SubOrder!]! # Array of related SubOrders
+}
+
+type SubOrder @entity {
+  id: ID!
+  amountIn: BigInt!
+  amountOut: BigInt!
+  rate: BigInt!
+  executedAt: BigInt!
+  executedHash: String!
+  dcaOrderId: ID! # Foreign key to DCAOrder
+}
